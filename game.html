@@ -225,6 +225,11 @@ function NewMessage(user, message) {
     leaderBoard = []
     questionIndex = 0
     function RenderQuestion(index){
+      if(questions.length-1<index){
+        CorrectAnswer("Oyun Sonu =)")
+        return
+      }
+
       $$("[words],[question]").map(e=>e.style.opacity="0")
       setTimeout(e=>{
         questionIndex = index
