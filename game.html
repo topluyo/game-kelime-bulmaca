@@ -1,0 +1,357 @@
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const kick = urlParams.get("kick");
+const questions_parameter = decodeURIComponent(atob(urlParams.get('data')))
+if (kick) {
+  fetch(`https://kick.com/api/v2/channels/${kick}`)
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to fetch channel data");
+      return res.json();
+    })
+    .then(({ chatroom }) => connectToChat(chatroom.id))
+    .catch((err) => console.error(err));
+}
+
+function connectToChat(chatroomId) {
+  let chat;
+
+  function createWebSocket() {
+    chat = new WebSocket(
+      "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false"
+    );
+
+    chat.onopen = () => {
+      chat.send(
+        JSON.stringify({
+          event: "pusher:subscribe",
+          data: { auth: "", channel: `chatrooms.${chatroomId}.v2` },
+        })
+      );
+    };
+
+    chat.onmessage = ({ data }) => {
+      const msg = JSON.parse(data);
+      if (msg.event === "App\\Events\\ChatMessageEvent") {
+        const { sender, content } = JSON.parse(msg.data);
+        NewMessage(sender.username, content);
+      }
+    };
+
+    chat.onclose = () => {
+      setTimeout(createWebSocket, 1000);
+    };
+  }
+
+  createWebSocket();
+}
+
+function NewMessage(user, message) {
+  console.log(user, message);
+}
+
+</script>
+
+
+
+<script src="//hasandelibas.github.io/documenter/documenter.js"></script>
+<meta charset="utf8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<header body-class="hide-menu hide-header theme-dark">
+  <a href="../" icon-button="" documenter-icon-arrow-left=""></a>
+  <div title="">📖 Kelime Bulmaca</div>
+  <div class="space"></div>
+  <input placeholder="Search...">
+  <a href="#">Api</a>
+  <a href="#">App</a>
+  <button icon-button="" documenter-icon-more=""></button>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+    
+    body{
+      font-size:1vmin;
+      --size : 1vmin;
+      overflow:hidden;
+      font-family: "Nunito", sans-serif;
+      font-optical-sizing: auto;
+      --correct:linear-gradient(45deg, #DE11BA, #19F);
+      --background:linear-gradient(45deg, #19f, #113cff);
+      --radius:10px;
+    }
+    *{
+      transition: all .2s;
+    }
+    #camera{
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      object-fit:cover;
+      transform:scaleX(-1);
+    }
+    [points]{
+      position:absolute;
+      left:0em;
+      top:0em;
+      height:calc(100vh - 2em);
+      overflow:hidden;
+      width:25vw;
+      font-size:4em;
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:.1em;
+    }
+    [point]{
+      padding: .25em 0.5em;
+      background: var(--background);
+      border-radius: var(--radius);
+      display: flex;
+      justify-content: space-between;
+      gap: .5em;
+      overflow:hidden;
+      height:2em;
+    }
+    [point] span{
+      display:inline-block;
+      width:80%;
+      overflow:hidden;
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    [messages]{
+      position:absolute;
+      right:20px;
+      top:20px;
+      height:calc(100vh - 2em);
+      overflow:hidden;
+      width:25vw;
+      font-size:3em;
+      padding:1em;
+    }
+    [message]{
+      padding: .25em 0.5em;
+      background: var(--background);
+      border-radius: var(--radius);
+      display: flex;
+      gap: .5em;
+      overflow:hidden;
+      height:2.5em;
+      width:100%;
+      position:absolute; 
+      left:0;
+      top:calc( var(--index) * 2.70em );
+      transition: top .2s; 
+    }
+    [message] b {
+      position: absolute;
+      top: 0.4em;
+      left: 12px;
+      font-size: .6em;
+      opacity:.8;
+      font-weight:200;
+    }
+    [message] span {
+      position: absolute;
+      font-size:1em;
+      bottom: .1em;
+      left: 12px;
+      width:calc(100% - 24px);
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight:700;
+    }
+    
+    [question]{
+      font-size: 4em;
+      position: absolute;
+      z-index: 2;
+      text-transform: uppercase;
+      left: 20px;
+      bottom: 20px;
+      max-width: calc(100% - 40px);
+      background: var(--background);
+      padding: .5em;
+      border-radius: var(--radius);
+      font-weight: bold;
+      width: calc(100% - 40px);
+    }
+    [question].correct{
+      background: var(--correct);
+    }
+    [words]{
+      position: absolute;
+      z-index: 1;
+      font-size: 5em;
+      display: flex;
+      flex-direction: row;
+      gap: 2vmin;
+      bottom: 15vh;
+    }
+    [word]{
+      height: 2em;
+      aspect-ratio: 1;
+      background:white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      border-radius: 100%;
+    }
+    [word=" "]{
+      visibility:hidden;
+    }
+    [word].open:after{
+      content:attr(word);
+    }
+    @keyframes pulseScale {
+      0% { background:white; transform: scale(1); }
+      100% { background: var(--background);transform: scale(1.125); }
+    }
+    [word].open{
+      animation: pulseScale .4s ease-in-out forwards;
+    }
+  </style>
+  <script>
+    leaderBoard = [
+      {user:"3",point:3},
+      {user:"1",point:1},
+      {user:"12",point:12},
+      {user:"10",point:10},
+      {user:"6",point:6},
+    ]
+    leaderBoard = []
+    questionIndex = 0
+    function RenderQuestion(index){
+      $$("[words],[question]").map(e=>e.style.opacity="0")
+      setTimeout(e=>{
+        questionIndex = index
+        let question = questions[index][0], answer = questions[index][1]
+        $("[question]").innerText = question
+        $("[question]").classList.remove("correct")
+        $("[words]").innerHTML = Array.from(answer).map(e=>`<div word="${e}"></div>`).join("")  
+      },500)
+      setTimeout(e=>{
+        $$("[words],[question]").map(e=>e.style.opacity="1")
+      },1000)
+    }
+
+    documenter.on("click","[word]",function(){
+      this.classList.add("open")
+    })
+
+    documenter.on("ready",function(){
+      window.questions = documenter.csv.parse(questions_parameter).filter(e=>e.length==2).map(e=>[e[0].trim(),e[1].trim()])
+
+      window.questions = questions.sort((a,b)=>a[1].length>b[1].length?1:-1)
+      RenderQuestion(questionIndex)
+
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 },
+          facingMode: "user" // or "environment" for rear camera on mobile
+        }
+      })
+      .then(function(stream) {
+        const videoElement = document.getElementById('camera');
+        videoElement.srcObject = stream;
+        videoElement.play();
+      })
+
+
+
+      UpdateLeaderBoard()
+    })
+    
+
+    UpdateLeaderBoard = function(){
+      let sorted = leaderBoard.sort((a,b)=>a.point-b.point>0 ? -1:1);
+      $("[points]").empty()
+      sorted.slice(0,8).map(e=>{
+        $("[points]").appendChild(documenter.render(`<div point user="${e.user}"><span>${e.user}</span><b>${e.point}</b></div>`))
+      })
+    }
+    
+    CorrectAnswer = function(user){
+      $("[question]").style.opacity=0;
+      $$("[word]").map(e=>e.classList.add("open"))
+      setTimeout(e=>{
+        $("[question]").classList.add("correct");
+        $("[question]").style.opacity=1;
+        $("[question]").innerText = user
+      },500)
+
+    }
+
+    documenter.on("click","[question].correct",function(){
+      RenderQuestion(questionIndex+1);
+
+    })
+
+    NewMessage = function(user,message){
+      //if(message.length > 20) message = message.substr(0,17) + "...";
+      if( questions[questionIndex][1]!="" && message.toLocaleLowerCase()==questions[questionIndex][1].toLocaleLowerCase()){
+        if(leaderBoard.find(e=>e.user==user)){
+          leaderBoard.find(e=>e.user==user).point += message.length
+        }else{
+          leaderBoard.push({user:user,point:message.length})
+        }
+        questions[questionIndex][1] = "";
+        CorrectAnswer(user)
+        UpdateLeaderBoard()
+      }
+
+      $("[messages]").prepend(documenter.render(`<div message style="--index:-1;"><b>${user}</b><span>${message}</span>`))
+      if($("[messages]").children.length>8) $("[messages]").children[8].remove()
+      $$("[messages] [message]").map((e,i)=>{
+        e.style.setProperty("--index",i)
+      })
+    }
+
+  </script>
+</header>
+
+<div csv="question" style="display:none;">
+"Belli, açık, meydanda", ayan
+İşsiz güçsüz,aylak
+İnsanın yaşadığı temel yapı,Ev
+Gece yolculuklarında yön bulmak için kullanılan gök cismi,Kutup Yıldızı
+Zamanı gösteren cihaz,Saat
+Süt veren evcil hayvan,İnek
+Gökyüzünde uçan büyük taşıt,Uçak
+Giyilen soğuk tutan üst kıyafet,Mont
+Türk mitolojisindeki kutsal hayvan,BozKurt
+Sıcak içilen kafeinli içecek,Kahve
+Gece gökyüzünde görülen parlak cisim,Yıldız
+Elektrikle çalışan hesaplama yapan cihaz,Bilgisayar
+Gizemli olayları inceleyen kişi,Dedektif
+yön bulmayı sağlayan araç,Pusula
+Çok hızlı esen güçlü rüzgar türü,Fırtına
+Yerin altındaki suya erişmek için açılan yapı,Kuyu
+Cem olmak,toplanmak
+ölümsüz,payidar
+uluslararası, beynelminel
+sözün kısası,Velhasıl
+"Memleket, şehir, kasaba",belde
+"Taraf, yön", Cenah
+Sabahları içilen sıcak içecek,Çay
+Kitapların konduğu eşya nedir,Raf
+Yazı yazmak için kullanılan araç,Kalem
+</div>
+ 
+<div game> 
+  <video id="camera"></video>
+  <div points></div>
+  <div messages></div>
+  <div words></div>
+  
+  <div question lang="tr"></div>
+</div>
+
+
+
+
