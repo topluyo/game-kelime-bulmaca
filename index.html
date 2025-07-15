@@ -1,0 +1,95 @@
+<script src="//hasandelibas.github.io/documenter/documenter.js"></script>
+<meta charset="utf8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<header body-class="hide-menu theme-light">
+  <div title="">📄 Kelime Oyunu</div>
+
+<style>
+  main{
+    padding:1em;
+  }
+</style>
+
+<script>
+
+  
+documenter.csv.stringify = function(data, options = {}) {
+  const delimiter = options.delimiter || ",";
+  const quote = options.quote || '"';
+  const newline = options.newline || "\n";
+  let csv = "";
+
+  // If data is array of objects, convert keys to headers
+  if (Array.isArray(data) && typeof data[0] === "object" && !Array.isArray(data[0])) {
+    const headers = Object.keys(data[0]);
+    csv += headers.map(field => quote + field + quote).join(delimiter) + newline;
+    data.forEach(row => {
+      csv += headers.map(field => quote + String(row[field]).replace(/"/g, '""') + quote).join(delimiter) + newline;
+    });
+  } 
+  // If data is a 2D array
+  else if (Array.isArray(data) && Array.isArray(data[0])) {
+    data.forEach(row => {
+      csv += row.map(cell => quote + String(cell).replace(/"/g, '""') + quote).join(delimiter) + newline;
+    });
+  } 
+  else {
+    throw new Error("Invalid data format. Must be an array of arrays or array of objects.");
+  }
+
+  return csv.trim();
+};
+  
+
+  function getRandomItems(arr, x) {
+    const shuffled = [...arr]; // create a copy
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, x);
+  }
+
+
+  let random = 0;
+  documenter.on("click","#random",function(){
+    if(random) {
+      let items = getRandomItems(random,20).map(e=>[e[1],e[0]])
+      $("[name='questions']").value = documenter.csv.stringify(items)
+      return
+    }
+    random = 1
+    documenter.post("./tdk_word_meaning_data.csv").then(e=>e.text()).then(e=>{
+      random = documenter.csv.parse(e)
+      let items = getRandomItems(random,20).map(e=>[e[1],e[0]])
+      $("[name='questions']").value = documenter.csv.stringify(items)
+    })
+  })
+
+  documenter.on("click","#start",function(){
+    let kick = $("[name='kick']").value
+    let questions = $("[name='questions']").value
+    result = "game.html?&kick="+kick+"&data="+btoa(encodeURIComponent(questions))
+    location = result
+  })
+  
+
+</script>
+</header>
+
+
+<div grid-form spellcheck="false">
+  <label>Kick Chati</label>
+  <input name="kick"/>
+
+  <label>Soru Cevaplar</label>
+  <textarea name="questions" style="height:calc(100vh - 170px)">Yazı yazmak için kullanılan araç, kalem
+Türkiye'nin başkenti, Ankara</textarea>
+  <label>
+    
+  </label>
+  <div flex-x gap style="justify-content:flex-end">
+    <div id="random" button light hover style="color:var(--front);background:transparent;">Rastegele Üret</div>
+    <div id="start" button>Başlat</div>
+  </div>
+</div>
